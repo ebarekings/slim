@@ -49,8 +49,8 @@ import NotificationMiddleware, {
   NotificationMiddlewareContext
 } from '../services/NotificationMiddleware'
 
-const DEFAULT_ROI_STROKE_COLOR: number[] = [0, 126, 163]
-const DEFAULT_ROI_FILL_COLOR: number[] = [0, 126, 163, 0.2]
+const DEFAULT_ROI_STROKE_COLOR: number[] = [255, 234, 0] // [0, 126, 163]
+const DEFAULT_ROI_FILL_COLOR: number[] = [255, 234, 0, 0.2] // [0, 126, 163, 0.2]
 const DEFAULT_ROI_STROKE_WIDTH: number = 2
 const DEFAULT_ROI_RADIUS: number = 5
 
@@ -182,10 +182,11 @@ const _constructViewers = ({ clients, slide, preload }: {
       metadata: slide.volumeImages,
       controls: ['overview', 'position'],
       preload: preload,
-      errorInterceptor: (error: CustomError) =>
+      errorInterceptor: (error: CustomError) => {
         NotificationMiddleware.onError(
           NotificationMiddlewareContext.DMV, error
         )
+      }
     })
     volumeViewer.activateSelectInteraction({})
 
@@ -200,11 +201,12 @@ const _constructViewers = ({ clients, slide, preload }: {
         metadata: slide.labelImages[0],
         resizeFactor: 1,
         orientation: 'vertical',
-        errorInterceptor: (error: CustomError) =>
+        errorInterceptor: (error: CustomError) => {
           NotificationMiddleware.onError(
             NotificationMiddlewareContext.DMV,
             error
           )
+        }
       })
     }
 
@@ -763,7 +765,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           )
         })
       })
-    }).catch(() => {
+    }).catch((error) => {
+      console.error(error)
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       NotificationMiddleware.onError(
         NotificationMiddlewareContext.SLIM,
@@ -1058,7 +1061,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           this.forceUpdate()
         }
       })
-    }).catch(() => {
+    }).catch((error) => {
+      console.error(error)
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       NotificationMiddleware.onError(
         NotificationMiddlewareContext.SLIM,
@@ -1096,19 +1100,18 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           studyInstanceUID: this.props.studyInstanceUID,
           seriesInstanceUID: series.SeriesInstanceUID
         }).then((retrievedMetadata): void => {
-          let annotations: dmv.metadata.MicroscopyBulkSimpleAnnotations[]
-          annotations = retrievedMetadata.map(metadata => {
+          const annotations: dmv.metadata.MicroscopyBulkSimpleAnnotations[] = retrievedMetadata.map(metadata => {
             return new dmv.metadata.MicroscopyBulkSimpleAnnotations({
               metadata
             })
           })
-          annotations = annotations.filter(ann => {
-            const refImage = this.props.slide.volumeImages[0]
-            return (
-              ann.FrameOfReferenceUID === refImage.FrameOfReferenceUID &&
-              ann.ContainerIdentifier === refImage.ContainerIdentifier
-            )
-          })
+          // annotations = annotations.filter(ann => {
+          //   const refImage = this.props.slide.volumeImages[0]
+          //   return (
+          //     ann.FrameOfReferenceUID === refImage.FrameOfReferenceUID &&
+          //     ann.ContainerIdentifier === refImage.ContainerIdentifier
+          //   )
+          // })
           annotations.forEach(ann => {
             try {
               this.volumeViewer.addAnnotationGroups(ann)
@@ -1122,7 +1125,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
                 )
               )
               // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              console.error('failed to add annotation groups: ', error)
+              console.error('failed to add annotation groups:', error)
             }
             ann.AnnotationGroupSequence.forEach(item => {
               const annotationGroupUID = item.AnnotationGroupUID
@@ -1145,7 +1148,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
            * interface unless an update is forced.
            */
           this.forceUpdate()
-        }).catch(() => {
+        }).catch((error) => {
+          console.error(error)
           // eslint-disable-next-line @typescript-eslint/no-floating-promises
           NotificationMiddleware.onError(
             NotificationMiddlewareContext.SLIM,
@@ -1157,7 +1161,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           )
         })
       })
-    }).catch(() => {
+    }).catch((error) => {
+      console.error(error)
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       NotificationMiddleware.onError(
         NotificationMiddlewareContext.SLIM,
@@ -1226,7 +1231,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
            */
             this.forceUpdate()
           }
-        }).catch(() => {
+        }).catch((error) => {
+          console.error(error)
           // eslint-disable-next-line @typescript-eslint/no-floating-promises
           NotificationMiddleware.onError(
             NotificationMiddlewareContext.SLIM,
@@ -1237,7 +1243,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           )
         })
       })
-    }).catch(() => {
+    }).catch((error) => {
+      console.error(error)
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       NotificationMiddleware.onError(
         NotificationMiddlewareContext.SLIM,
@@ -1310,7 +1317,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
            */
             this.forceUpdate()
           }
-        }).catch(() => {
+        }).catch((error) => {
+          console.error(error)
           // eslint-disable-next-line @typescript-eslint/no-floating-promises
           NotificationMiddleware.onError(
             NotificationMiddlewareContext.SLIM,
@@ -1321,7 +1329,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           )
         })
       })
-    }).catch(() => {
+    }).catch((error) => {
+      console.error(error)
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       NotificationMiddleware.onError(
         NotificationMiddlewareContext.SLIM,
@@ -1481,6 +1490,23 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       state.loadingFrames.add(key)
       return state
     })
+  }
+
+  onFrameLoadingError = (event: CustomEventInit): void => {
+    console.error('Failed to load frame')
+  }
+
+  onLoadingError = (event: CustomEventInit): void => {
+    console.error('Failed to load data')
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    const message = (event.detail?.payload?.message === null ? 'Failed to load data' : event.detail?.payload?.message) as string
+    NotificationMiddleware.onError(
+      NotificationMiddlewareContext.SLIM,
+      new CustomError(
+        errorTypes.VISUALIZATION,
+        message
+      ) as any
+    )
   }
 
   onFrameLoadingEnded = (event: CustomEventInit): void => {
@@ -1667,6 +1693,10 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
   }
 
   componentWillUnmount (): void {
+    this.volumeViewer.cleanup()
+    if (this.labelViewer != null) {
+      this.labelViewer.cleanup()
+    }
     window.removeEventListener('beforeunload', this.componentCleanup)
   }
 
@@ -1700,6 +1730,10 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       this.onLoadingEnded
     )
     document.body.addEventListener(
+      'dicommicroscopyviewer_loading_error',
+      this.onLoadingError
+    )
+    document.body.addEventListener(
       'dicommicroscopyviewer_frame_loading_started',
       this.onFrameLoadingStarted
     )
@@ -1708,14 +1742,18 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       this.onFrameLoadingEnded
     )
     document.body.addEventListener(
+      'dicommicroscopyviewer_frame_loading_error',
+      this.onFrameLoadingError
+    )
+    document.body.addEventListener(
       'keyup',
       this.onKeyUp
     )
+    window.addEventListener('beforeunload', this.componentCleanup)
     window.addEventListener('resize', this.onWindowResize)
   }
 
   componentDidMount (): void {
-    window.addEventListener('beforeunload', this.componentCleanup)
     this.componentSetup()
     this.populateViewports()
 
@@ -2214,7 +2252,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       const client = this.props.clients[StorageClasses.COMPREHENSIVE_3D_SR]
       client.storeInstances({ datasets: [buffer] }).then(
         (response: any) => message.info('Annotations were saved.')
-      ).catch(() => {
+      ).catch((error) => {
+        console.error(error)
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         NotificationMiddleware.onError(
           NotificationMiddlewareContext.SLIM,
